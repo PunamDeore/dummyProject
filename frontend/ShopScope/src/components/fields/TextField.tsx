@@ -1,26 +1,17 @@
 import { Form } from 'react-bootstrap';
 import { FieldShell, type BaseFieldProps } from './FieldShell';
-
-/** Attributes that pass straight through to the DOM control when the field is used UNCONTROLLED (name, defaultValue…). */
 type ControlRest = Pick<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'defaultValue' | 'autoFocus' | 'required' | 'readOnly'>;
 
 export interface TextFieldProps extends BaseFieldProps, ControlRest {
-  /** Leave `value`/`onChange` off and the field is uncontrolled — the router's <Form> wants that (Demo 10). */
   value?: string;
-  /** A VALUE, not an event. Callers write `onChange={setTitle}` and never learn this is an <input>. */
-  onChange?: (value: string) => void;
+   onChange?: (value: string) => void;
   onBlur?: () => void;
   type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'search';
   placeholder?: string;
   autoComplete?: string;
 }
 
-/**
- * A text-like input that owns NO state.
- *
- * - `error` is DISPLAYED here, never decided here. Who decides (a hand-written
- *   validator, react-hook-form, zod) can change without touching this file.
- */
+
 export function TextField({
   controlId,
   label,

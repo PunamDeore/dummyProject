@@ -6,9 +6,32 @@ export interface UploadResult {
   echoedFiles: string[];
 }
 
-/** Uploads a file and returns what the server echoed. Lab 2.2: FormData, onUploadProgress, cancellation. */
-// TODO(lab-2.2): build a FormData, forward onProgress → onUploadProgress (guard event.total), forward signal
-export async function uploadFile(file: File): Promise<UploadResult> {
-  await uploadApi.post('/post', file);
-  return { size: file.size, echoedFields: [], echoedFiles: [] };
+export interface UploadOptions {
+  onProgress?: (percent: number) => void;
+  signal?: AbortSignal;
+}
+
+export async function uploadFile(file: File, { onProgress, signal }: UploadOptions = {}): Promise<UploadResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await uploadApi.post<{ files?: Record<string, string>; form?: Record<string, string> }>(
+    '/post',
+    formData,
+    {
+      signal,
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress?.(percent);
+        }
+      },
+    },
+  );
+
+  return {
+    size: file.size,
+    echoedFields: Object.keys(response.data?.form ?? {}),
+    echoedFiles: Object.keys(response.data?.files ?? {}),
+  };
 }

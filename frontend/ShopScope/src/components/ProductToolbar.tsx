@@ -1,8 +1,6 @@
 import { Badge, Button, Form, InputGroup, Stack } from 'react-bootstrap';
 import { Search } from 'react-bootstrap-icons';
 import type { SortKey } from '../lib/catalog';
-
-/** Sort options as data — the <select> is rendered FROM this list. */
 export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: '', label: 'Default order' },
   { value: 'price-asc', label: 'Price: low to high' },
@@ -18,10 +16,6 @@ interface ProductToolbarProps {
   resultCount: number;
 }
 
-/**
- * CONTROLLED: the parent owns `query` and `sort`; this component renders them
- * and reports changes. It has no useState — it could not "forget" or "drift".
- */
 export function ProductToolbar({ query, onQueryChange, sort, onSortChange, resultCount }: ProductToolbarProps) {
   return (
     <Stack direction="horizontal" gap={2} className="mb-3 flex-wrap">
@@ -47,8 +41,7 @@ export function ProductToolbar({ query, onQueryChange, sort, onSortChange, resul
         aria-label="Sort products"
         style={{ maxWidth: 200 }}
         value={sort}
-        // The DOM gives us a string; the cast lives HERE, once, not at every call site.
-        onChange={(e) => onSortChange(e.target.value as SortKey)}
+               onChange={(e) => onSortChange(e.target.value as SortKey)}
       >
         {SORT_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

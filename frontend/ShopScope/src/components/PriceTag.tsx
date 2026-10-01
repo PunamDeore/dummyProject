@@ -11,7 +11,6 @@ interface PriceTagProps {
 }
 
 export function PriceTag({ price, discountPercentage = 0, size = 'md' }: PriceTagProps) {
-  // DERIVED, not a prop. Two sources of truth would drift apart.
   const hasDiscount = discountPercentage >= 1;
   const finalPrice = hasDiscount ? discountedPrice(price, discountPercentage) : price;
 

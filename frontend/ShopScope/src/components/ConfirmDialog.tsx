@@ -13,11 +13,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-/**
- * A reusable confirmation. `window.confirm` blocks the main thread, can't be
- * styled, and can't show a spinner — this can. Controlled: the parent owns
- * `show` and decides what confirm/cancel mean.
- */
+
 export function ConfirmDialog({
   show,
   title,

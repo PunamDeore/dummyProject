@@ -2,22 +2,13 @@ import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import type { SortKey } from '../lib/catalog';
 
-/** Everything the server needs to know about what the user is looking at. */
 export interface ProductFilters {
   query: string;
   sort: SortKey;
   category: string;
-  /** 0-based in the app (for skip); 1-based in the URL (for humans). */
   page: number;
 }
 
-/**
- * The product list's filters, read from and written to the QUERY STRING.
- *
- * The URL is the single source of truth — there is no useState mirror to
- * fall out of sync with it, every filter combination is a shareable link,
- * and the back button undoes filter changes for free.
- */
 export function useProductFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -32,10 +23,7 @@ export function useProductFilters() {
     };
   }, [searchParams]);
 
-  /**
-   * Merge a patch into the current params. Empty values are REMOVED so the URL
-   * never carries `?q=&category=all`. Any change except paging resets the page.
-   */
+
   const updateFilters = useCallback(
     (patch: Partial<ProductFilters>, { replace = true }: { replace?: boolean } = {}) => {
       setSearchParams(

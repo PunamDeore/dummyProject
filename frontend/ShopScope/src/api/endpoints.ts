@@ -1,11 +1,3 @@
-/**
- * Every URL the app can hit, in one place. Paths are relative to the instance
- * baseURL — never absolute.
- *
- * FUNCTIONS, not string constants: a path param can't be forgotten (the
- * compiler insists on it), and it is always encoded. Interpolating raw user
- * input into a URL is how a category called "home & garden" becomes a broken request.
- */
 const enc = (value: string | number) => encodeURIComponent(String(value));
 
 export const endpoints = {
@@ -30,5 +22,10 @@ export const endpoints = {
   },
   carts: {
     create: () => '/carts/add',
+  },
+  orders: {
+    create: () => '/orders/create',
+    byUser: (userId: number | string) => `/orders/user/${enc(userId)}`,
+    detail: (id: number | string) => `/orders/${enc(id)}`,
   },
 };

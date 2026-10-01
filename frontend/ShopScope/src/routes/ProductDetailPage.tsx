@@ -5,37 +5,26 @@ import { getProduct } from '../api/services/products';
 import { ApiError } from '../lib/ApiError';
 import { PriceTag } from '../components/PriceTag';
 import { StockBadge } from '../components/StockBadge';
-import { useCartStore } from '../store/cart';
-import { selectIsSaved, useWishlistStore } from '../store/wishlist';
+import { useAppDispatch, useAppSelector, selectIsSaved } from '../store';
+import { addToCart } from '../store/cartSlice';
+import { toggleWishlist } from '../store/wishlistSlice';
 
-/**
- * Runs BEFORE the component renders. Forward request.signal so the router can
- * cancel the fetch if the user navigates away mid-load.
- */
 export async function productDetailLoader({ params, request }: LoaderFunctionArgs) {
-  const productId = params.productId ?? ''; // params are string | undefined — the route guarantees it, TS can't
+  const productId = params.productId ?? '';
   try {
     return await getProduct(productId, { signal: request.signal });
   } catch (error) {
-    // Turn a 404 into a thrown Response so the ErrorBoundary can render a
-    // proper "not found" page instead of a generic failure.
     if (error instanceof ApiError && error.isNotFound) {
       throw data({ message: `No product with id ${productId}.` }, { status: 404, statusText: 'Not Found' });
     }
-    throw error; // anything else → the boundary's generic branch
+    throw error;
   }
 }
 
-/** No loading state, no error state, no effect: the data is already here on the first render. */
 export function ProductDetailPage() {
-  // Typed from the loader itself — change the loader's return and this changes with it.
   const product = useLoaderData<typeof productDetailLoader>();
-
-  // This page never had access to the wishlist (it lived in the layout's Outlet context, and only
-  // ProductsPage read it). With a store, any page can: no plumbing.
-  const saved = useWishlistStore(selectIsSaved(product.id));
-  const toggleSave = useWishlistStore((s) => s.toggle);
-  const addToCart = useCartStore((s) => s.add);
+  const dispatch = useAppDispatch();
+  const saved = useAppSelector(selectIsSaved(product.id));
 
   return (
     <>
@@ -43,7 +32,6 @@ export function ProductDetailPage() {
         <ArrowLeft className="me-1" />
         Back to products
       </Link>
-
       <Card>
         <Card.Body>
           <Row className="g-4">
@@ -58,26 +46,26 @@ export function ProductDetailPage() {
                   <div className="text-muted small text-uppercase">{product.brand ?? product.category}</div>
                   <h1 className="h3 mb-0">{product.title}</h1>
                 </div>
-
                 <div className="d-flex align-items-center gap-3 flex-wrap">
                   <PriceTag price={product.price} discountPercentage={product.discountPercentage} size="lg" />
                   <StockBadge stock={product.stock} />
-                  <span className="text-muted">★ {product.rating}</span>
+                  <span className="text-muted">★ {product.rating ?? '—'}</span>
                 </div>
-
                 <p className="mb-0">{product.description}</p>
-
                 <div className="d-flex gap-2">
-                  <Button disabled={product.stock === 0} onClick={() => addToCart(product)}>
+                  <Button disabled={product.stock === 0} onClick={() => dispatch(addToCart({ product }))}>
                     <Cart3 className="me-1" />
                     {product.stock === 0 ? 'Sold out' : 'Add to cart'}
                   </Button>
-                  <Button variant={saved ? 'danger' : 'outline-danger'} aria-pressed={saved} onClick={() => toggleSave(product.id)}>
+                  <Button
+                    variant={saved ? 'danger' : 'outline-danger'}
+                    aria-pressed={saved}
+                    onClick={() => dispatch(toggleWishlist(product.id))}
+                  >
                     {saved ? <HeartFill className="me-1" /> : <Heart className="me-1" />}
                     {saved ? 'Saved' : 'Save'}
                   </Button>
                 </div>
-
                 <div className="d-flex flex-wrap gap-1">
                   {product.tags?.map((tag) => (
                     <Badge key={tag} bg="light" text="dark" className="border">
@@ -85,7 +73,6 @@ export function ProductDetailPage() {
                     </Badge>
                   ))}
                 </div>
-
                 <dl className="row mb-0 small">
                   <dt className="col-4 text-muted fw-normal">SKU</dt>
                   <dd className="col-8 font-monospace">{product.sku}</dd>

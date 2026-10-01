@@ -2,8 +2,6 @@ import { Button, Col, Modal, Row, Spinner } from 'react-bootstrap';
 import { Form as RouterForm } from 'react-router'; // same name as Bootstrap's <Form> — alias it
 import { NumberField, SelectField, TextAreaField, TextField } from './fields';
 import type { CategoryOption, Product, ProductDraft } from '../types';
-
-/** What the route action returns when a submit is rejected: which fields, and what the user had typed. */
 export interface ProductFormActionData {
   errors?: Partial<Record<keyof ProductDraft | 'form', string>>;
   values?: Partial<Record<keyof ProductDraft, string>>;
@@ -20,19 +18,9 @@ interface ProductFormProps {
   onClose: () => void;
 }
 
-/**
- * The router's <Form>, over the SAME field components — used UNCONTROLLED.
- * Leave `value`/`onChange` off and each field passes `name` + `defaultValue`
- * straight to the DOM; the router serialises them on submit and calls the
- * route action; every loader on the page re-runs afterwards.
- *
- * On a validation failure the action RETURNS { errors, values } and the fields
- * repopulate from `values` — the user's input survives.
- */
 export function ProductForm({ show, editing = null, categories, action, actionData, submitting, onClose }: ProductFormProps) {
   const errors = actionData?.errors ?? {};
   const values = actionData?.values ?? {};
-  /** A failed submit's value beats the product being edited beats the fallback. */
   const initial = (field: keyof ProductDraft, fallback: string | number = ''): string | number =>
     values[field] ?? editing?.[field] ?? fallback;
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));

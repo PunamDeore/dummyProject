@@ -6,8 +6,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* vite/client declares `import "./x.css"` and import.meta.env.
-       Without it the CSS import in main.tsx is an error. */
     "types": ["vite/client"],
 
     "moduleResolution": "bundler",
@@ -16,10 +14,6 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-
-    /* Strict on from day one. Turning strictness ON later means fixing
-       hundreds of errors at once; leaving it on from the start means fixing
-       them one at a time, as you write them. */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

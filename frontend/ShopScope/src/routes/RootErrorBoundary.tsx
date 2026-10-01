@@ -3,17 +3,8 @@ import { Link, isRouteErrorResponse, useRouteError } from 'react-router';
 import { env } from '../config/env';
 import { ApiError } from '../lib/ApiError';
 
-/**
- * The safety net. Catches loader, action AND render errors anywhere under the
- * root route. It renders its own Container because if the root loader failed,
- * RootLayout never rendered — there is no layout to sit inside.
- *
- * useRouteError() returns `unknown` — three shapes to narrow, in order.
- */
 export function RootErrorBoundary() {
   const error = useRouteError();
-
-  // Authorisation failures get their own page: the user is signed in, just not allowed here.
   if (isRouteErrorResponse(error) && error.status === 403) {
     const body = error.data as { message?: unknown } | null;
     return (
@@ -35,19 +26,16 @@ export function RootErrorBoundary() {
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    // 1. A Response thrown with data() / redirect(): has status + statusText
-    status = error.status;
+      status = error.status;
     title = status === 404 ? 'Page not found' : `${status} ${error.statusText}`;
     const body = error.data as { message?: unknown } | null;
     if (typeof body?.message === 'string') message = body.message;
   } else if (error instanceof Error) {
-    // 2. A real Error — our ApiError lands here (and it carries a status)
-    message = error.message;
+     message = error.message;
     stack = error.stack;
     if (error instanceof ApiError) status = error.status;
   }
-  // 3. anything else — someone threw a string — keeps the defaults
-
+ 
   return (
     <Container className="py-5">
       <Alert variant="danger">

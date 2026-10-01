@@ -16,7 +16,6 @@ interface ProductGridProps {
   onAddToCart?: (product: Product) => void;
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
-  /** The product whose mutation is in flight — dimmed and disabled. */
   busyId?: string | null;
 }
 

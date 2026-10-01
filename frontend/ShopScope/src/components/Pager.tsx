@@ -1,13 +1,10 @@
 import { Pagination } from 'react-bootstrap';
 
 interface PagerProps {
-  /** 0-based, like `skip`. Displayed 1-based, like humans. */
   page: number;
   pageCount: number;
   onChange: (page: number) => void;
 }
-
-/** Controlled: the parent owns `page`; this renders it and reports clicks. */
 export function Pager({ page, pageCount, onChange }: PagerProps) {
   if (pageCount <= 1) return null;
 

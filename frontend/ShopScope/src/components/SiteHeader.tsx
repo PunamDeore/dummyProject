@@ -3,8 +3,8 @@ import { Badge, Button, Container, Form, Image, Nav, Navbar } from 'react-bootst
 import { BoxArrowInRight, Cart3, Heart, PersonPlus, Shop } from 'react-bootstrap-icons';
 import { Link, NavLink } from 'react-router';
 import type { User } from '../types';
-import { selectCount, useCartStore } from '../store/cart';
-import { selectWishlistCount, useWishlistStore } from '../store/wishlist';
+import { useAppDispatch, useAppSelector, selectCartCount, selectWishlistCount } from '../store';
+import { openCart } from '../store/cartSlice';
 import { SignupForm } from './SignupForm';
 
 const NAV_LINKS = [
@@ -23,19 +23,16 @@ function CountBadge({ count, label }: { count: number; label: string }) {
 }
 
 interface SiteHeaderProps {
-  /** null = signed out. */
   user?: User | null;
   onSignOut?: () => void;
 }
 
 export function SiteHeader({ user = null, onSignOut }: SiteHeaderProps) {
   const [showSignup, setShowSignup] = useState(false);
+  const dispatch = useAppDispatch();
 
-  // No props for these any more: the header subscribes to the two stores itself.
-  // Each selector returns a NUMBER, so the header re-renders only when a count actually changes.
-  const wishlistCount = useWishlistStore(selectWishlistCount);
-  const cartCount = useCartStore(selectCount);
-  const openCart = useCartStore((s) => s.open);
+  const wishlistCount = useAppSelector(selectWishlistCount);
+  const cartCount = useAppSelector(selectCartCount);
 
   return (
     <Navbar bg="dark" data-bs-theme="dark" expand="md" sticky="top">
@@ -58,21 +55,29 @@ export function SiteHeader({ user = null, onSignOut }: SiteHeaderProps) {
               </Nav.Link>
             )}
           </Nav>
-
           <Form className="d-none d-sm-flex me-2" role="search" onSubmit={(e) => e.preventDefault()}>
-            <Form.Control type="search" size="sm" placeholder="Search products" aria-label="Search products" />
+            <Form.Control type="search" size="sm" placeholder="Search products..." aria-label="Search products" />
           </Form>
-
           <div className="d-flex align-items-center gap-3">
-            <Button variant="outline-light" size="sm" className="position-relative" aria-label={`Wishlist, ${wishlistCount} items`}>
+            <Button
+              variant="outline-light"
+              size="sm"
+              className="position-relative"
+              aria-label={`Wishlist, ${wishlistCount} items`}
+            >
               <Heart />
               <CountBadge count={wishlistCount} label="saved" />
             </Button>
-            <Button variant="outline-light" size="sm" className="position-relative" aria-label={`Cart, ${cartCount} items`} onClick={openCart}>
+            <Button
+              variant="outline-light"
+              size="sm"
+              className="position-relative"
+              aria-label={`Cart, ${cartCount} items`}
+              onClick={() => dispatch(openCart())}
+            >
               <Cart3 />
               <CountBadge count={cartCount} label="in cart" />
             </Button>
-
             {user ? (
               <>
                 <Image src={user.image} roundedCircle width={28} height={28} alt="" className="bg-secondary" />
@@ -87,7 +92,6 @@ export function SiteHeader({ user = null, onSignOut }: SiteHeaderProps) {
                   <PersonPlus className="me-1" />
                   Sign up
                 </Button>
-                {/* react-bootstrap's `as` prop doesn't type-check against the router's Link — so a Link wearing button classes */}
                 <Link to="/login" className="btn btn-light btn-sm">
                   <BoxArrowInRight className="me-1" />
                   Sign in
@@ -97,7 +101,6 @@ export function SiteHeader({ user = null, onSignOut }: SiteHeaderProps) {
           </div>
         </Navbar.Collapse>
       </Container>
-
       <SignupForm show={showSignup} onClose={() => setShowSignup(false)} />
     </Navbar>
   );

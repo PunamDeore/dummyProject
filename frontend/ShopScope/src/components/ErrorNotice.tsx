@@ -4,16 +4,11 @@ import { env } from '../config/env';
 import type { ApiError } from '../lib/ApiError';
 
 interface ErrorNoticeProps {
-  /** Already normalised: `ApiError.from(err)` in the catch turns `unknown` into this. */
   error: ApiError | null | undefined;
   onRetry?: () => void;
   title?: string;
 }
 
-/**
- * Renders an ApiError. Knows nothing about axios — the interceptor already
- * translated the failure into message / code / status / requestId.
- */
 export function ErrorNotice({ error, onRetry, title }: ErrorNoticeProps) {
   if (!error) return null;
 

@@ -1,7 +1,7 @@
 import { Alert, Button } from 'react-bootstrap';
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router';
 
-/** Scoped to the product route, so a missing product keeps the navbar and layout alive. */
+
 export function ProductErrorBoundary() {
   const error = useRouteError();
 
@@ -18,7 +18,7 @@ export function ProductErrorBoundary() {
     );
   }
 
-  // Anything else — including an ApiError from a network failure.
+
   return (
     <Alert variant="danger">
       <Alert.Heading className="h5">Couldn't load this product</Alert.Heading>

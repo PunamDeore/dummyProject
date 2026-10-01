@@ -1,9 +1,6 @@
 import { Card, Col, Placeholder, Row } from 'react-bootstrap';
 
-/**
- * Card-shaped placeholders in the SAME grid as the real cards, so the page
- * doesn't jump when data arrives. `animation="glow"` gives the shimmer.
- */
+
 export function CardSkeletons({ count = 8 }: { count?: number }) {
   return (
     <Row xs={1} sm={2} md={3} xl={4} className="g-3" aria-busy="true" aria-label="Loading products">

@@ -10,7 +10,6 @@ export function NotFoundPage() {
       <p>
         Nothing lives at <code>{location.pathname}</code>.
       </p>
-      {/* react-bootstrap's `as` prop doesn't type-check against the router's Link — so a Link wearing Bootstrap's button classes */}
       <Link to="/products" className="btn btn-outline-secondary">
         Back to products
       </Link>

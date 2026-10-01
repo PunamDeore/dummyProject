@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import type { ProductDraft } from '../types';
 
-// =============================================================== Product form
-// Hand-rolled: a PURE function from values to errors. Testable without
-// rendering anything, reusable on a server, impossible to get out of sync.
-
-/** At most one message per field, keys checked against the draft type — a typo is a compile error. */
 export type ProductErrors = Partial<Record<keyof ProductDraft, string>>;
 
 export const PRODUCT_EMPTY: ProductDraft = { title: '', price: NaN, category: '', stock: 10, description: '' };
@@ -19,11 +14,6 @@ export function validateProduct(values: ProductDraft): ProductErrors {
   if (values.description.length > 300) errors.description = 'Keep it under 300 characters.';
   return errors;
 }
-
-// ================================================================ Sign-up form
-// A zod SCHEMA: rules as data, the TYPE of the values derived from it, one
-// readable block instead of a dozen scattered ones. It does not know whether
-// the form keeps its state in useState or in react-hook-form.
 
 export interface Option<T extends string = string> {
   value: T;
@@ -39,6 +29,12 @@ export const GENDERS: Option<Gender>[] = [
   { value: 'other', label: 'Other / prefer not to say' },
 ];
 
+export const ROLES: Option[] = [
+  { value: 'user', label: 'User' },
+  { value: 'moderator', label: 'Moderator' },
+  { value: 'admin', label: 'Admin' },
+];
+
 export const COUNTRIES: Option[] = [
   { value: 'IN', label: 'India' },
   { value: 'GB', label: 'United Kingdom' },
@@ -47,7 +43,6 @@ export const COUNTRIES: Option[] = [
   { value: 'AU', label: 'Australia' },
 ];
 
-/** The product categories a shopper can follow — the same slugs DummyJSON uses. */
 export const INTERESTS: Option[] = [
   { value: 'beauty', label: 'Beauty' },
   { value: 'fragrances', label: 'Fragrances' },
@@ -60,17 +55,16 @@ export const INTERESTS: Option[] = [
 export const signupSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required.'),
   lastName: z.string().trim().min(1, 'Last name is required.'),
-  email: z.email("That doesn't look like an email address."),
+  email: z.string().email("That doesn't look like an email address."),
   password: z.string().min(8, 'Use at least 8 characters.').regex(/\d/, 'Include at least one number.'),
   age: z.number({ error: 'Age is required.' }).int('Whole years, please.').min(18, 'You must be 18 or over.').max(120, 'That seems unlikely.'),
   birthDate: z.string().min(1, 'Pick your date of birth.'),
-  // '' is what an untouched radio group holds; the refine is what makes it an error.
   gender: z.enum(GENDER_VALUES).or(z.literal('')).refine((v) => v !== '', 'Pick one.'),
+  role: z.enum(['admin', 'moderator', 'user'] as const),
   country: z.string().min(1, 'Pick a country.'),
   interests: z.array(z.string()).min(1, 'Follow at least one category.'),
   budget: z.number().min(0).max(5000),
   newsletter: z.boolean(),
-  // z.boolean() alone would accept `false`. The refine says exactly what we mean.
   terms: z.boolean().refine((v) => v, 'You must accept the terms.'),
   avatar: z
     .instanceof(File)
@@ -79,7 +73,6 @@ export const signupSchema = z.object({
     .refine((f) => !f || f.size <= 2_000_000, 'Keep it under 2 MB.'),
 });
 
-/** The form's values, DERIVED from the schema — one source of truth for rules and type. */
 export type SignupValues = z.input<typeof signupSchema>;
 
 export const SIGNUP_EMPTY: SignupValues = {
@@ -90,6 +83,7 @@ export const SIGNUP_EMPTY: SignupValues = {
   age: NaN,
   birthDate: '',
   gender: '',
+  role: 'user',
   country: '',
   interests: [],
   budget: 500,

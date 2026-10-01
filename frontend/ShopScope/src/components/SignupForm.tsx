@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import {
@@ -14,21 +14,23 @@ import {
   SelectField,
   TextField,
 } from './fields';
-import { COUNTRIES, GENDERS, INTERESTS, SIGNUP_EMPTY, signupSchema, type SignupValues } from '../lib/validation';
+import {
+  COUNTRIES,
+  GENDERS,
+  INTERESTS,
+  ROLES,
+  SIGNUP_EMPTY,
+  signupSchema,
+  type Gender,
+  type SignupValues,
+} from '../lib/validation';
+import type { Role } from '../types';
 
 interface SignupFormProps {
   show: boolean;
   onClose: () => void;
 }
 
-/**
- * The SAME field components, driven by react-hook-form + zod.
- *
- * Gone, compared with ProductForm: the draft state, set(), touched, touch(),
- * submitAttempted, errorFor(), isValid and the guard clause. The library owns
- * the lifecycle; the schema owns the rules AND the type; the components never
- * learned either exists.
- */
 export function SignupForm({ show, onClose }: SignupFormProps) {
   const [welcome, setWelcome] = useState<string | null>(null);
 
@@ -37,24 +39,44 @@ export function SignupForm({ show, onClose }: SignupFormProps) {
     handleSubmit,
     reset,
     setError,
+    setValue,
+    getValues,
     formState: { isSubmitting, isDirty },
   } = useForm<SignupValues>({
-    resolver: zodResolver(signupSchema), // rules live in the schema, not on the fields
-    mode: 'onTouched', // show a field's error once it has been visited — the same strategy as ProductForm's `touched`
+    resolver: zodResolver(signupSchema),
+    mode: 'onTouched',
     defaultValues: SIGNUP_EMPTY,
   });
 
-  /** Called ONLY with valid data — the guard clause, built in. */
-  async function onValid(values: SignupValues) {
-    await new Promise((resolve) => setTimeout(resolve, 700)); // stand-in for POST /users/add — wiring it up for real is Demo 8's challenge
+  const watchedAge = useWatch({ control, name: 'age' });
 
+  useEffect(() => {
+    if (!watchedAge || Number.isNaN(Number(watchedAge)) || Number(watchedAge) < 0) return;
+
+    const currentYear = new Date().getFullYear();
+    const calculatedYear = currentYear - Number(watchedAge);
+
+    const currentBirthDate = getValues('birthDate');
+    const monthDay =
+      currentBirthDate && currentBirthDate.includes('-')
+        ? currentBirthDate.slice(currentBirthDate.indexOf('-') + 1)
+        : '01-01';
+
+    setValue('birthDate', `${calculatedYear}-${monthDay}`, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [watchedAge, setValue, getValues]);
+
+  async function onValid(values: SignupValues) {
+    await new Promise((resolve) => setTimeout(resolve, 700));
     if (values.email.endsWith('@taken.com')) {
-      // A SERVER-side failure surfaces on the field it belongs to
       setError('email', { message: 'That email is already registered.' });
       return;
     }
-
-    setWelcome(`${values.firstName}, your account is ready. Following: ${values.interests.join(', ')}.`);
+    setWelcome(
+      `${values.firstName}, your account is ready. Role: ${values.role}. Following: ${values.interests.join(', ')}.`
+    );
     reset();
   }
 
@@ -70,7 +92,6 @@ export function SignupForm({ show, onClose }: SignupFormProps) {
         <Modal.Header closeButton={!isSubmitting}>
           <Modal.Title className="h6">Create your ShopScope account</Modal.Title>
         </Modal.Header>
-
         <Modal.Body>
           {welcome && (
             <Alert variant="success" dismissible onClose={() => setWelcome(null)}>
@@ -123,25 +144,49 @@ export function SignupForm({ show, onClose }: SignupFormProps) {
           </Row>
 
           <Row>
-            <Col sm={4}>
+            <Col sm={3}>
               <Field name="age" control={control}>
                 {(f) => <NumberField controlId="su-age" label="Age" min={0} max={120} {...f} />}
               </Field>
             </Col>
-            <Col sm={4}>
+            <Col sm={3}>
               <Field name="birthDate" control={control}>
-                {(f) => <DateField controlId="su-birthDate" label="Date of birth" max="2010-01-01" {...f} />}
+                {(f) => <DateField controlId="su-birthDate" label="Date of birth" {...f} />}
               </Field>
             </Col>
-            <Col sm={4}>
+            <Col sm={3}>
+              <Field name="role" control={control}>
+                {({ value, onChange, onBlur, error }) => (
+                  <SelectField
+                    controlId="su-role"
+                    label="Role"
+                    options={ROLES}
+                    value={value}
+                    onChange={(val) => onChange(val as Role)}
+                    onBlur={onBlur}
+                    error={error}
+                  />
+                )}
+              </Field>
+            </Col>
+            <Col sm={3}>
               <Field name="country" control={control}>
-                {(f) => <SelectField controlId="su-country" label="Country" placeholder="Choose…" options={COUNTRIES} {...f} />}
+                {(f) => <SelectField controlId="su-country" label="Country" placeholder="Choose..." options={COUNTRIES} {...f} />}
               </Field>
             </Col>
           </Row>
 
           <Field name="gender" control={control}>
-            {(f) => <RadioGroupField controlId="su-gender" label="Gender" options={GENDERS} {...f} />}
+            {({ value, onChange, error }) => (
+              <RadioGroupField<Gender>
+                controlId="su-gender"
+                label="Gender"
+                options={GENDERS}
+                value={value as Gender}
+                onChange={onChange}
+                error={error}
+              />
+            )}
           </Field>
 
           <Field name="interests" control={control}>
@@ -157,13 +202,11 @@ export function SignupForm({ show, onClose }: SignupFormProps) {
           </Field>
 
           <Field name="avatar" control={control}>
-            {/* FileField takes `file`, not `value` — the one component that can't use {...f} */}
             {({ value, onChange, error }) => (
               <FileField controlId="su-avatar" label="Profile picture (optional)" accept="image/*" file={value} onChange={onChange} error={error} />
             )}
           </Field>
 
-          {/* CheckboxField takes `checked`, not `value` */}
           <Field name="newsletter" control={control}>
             {({ value, onChange }) => (
               <CheckboxField controlId="su-newsletter" type="switch" label="Email me about deals" checked={value} onChange={onChange} />
@@ -176,14 +219,13 @@ export function SignupForm({ show, onClose }: SignupFormProps) {
             )}
           </Field>
         </Modal.Body>
-
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={() => reset()} disabled={!isDirty || isSubmitting}>
             Reset
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Spinner as="span" size="sm" animation="border" className="me-2" />}
-            {isSubmitting ? 'Creating…' : 'Create account'}
+            {isSubmitting ? 'Creating...' : 'Create account'}
           </Button>
         </Modal.Footer>
       </Form>

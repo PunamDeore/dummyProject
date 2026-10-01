@@ -10,15 +10,22 @@ interface ProductCardProps {
   density?: Density;
   saved?: boolean;
   onToggleSave?: (id: number) => void;
-  /** The card stays dumb: it reports the product, the page decides what "add" means. */
   onAddToCart?: (product: Product) => void;
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
-  /** A mutation is in flight for this product: dim it and disable its actions. */
   busy?: boolean;
 }
 
-export function ProductCard({ product, density = 'comfortable', saved = false, onToggleSave, onAddToCart, onEdit, onDelete, busy = false }: ProductCardProps) {
+export function ProductCard({
+  product,
+  density = 'comfortable',
+  saved = false,
+  onToggleSave,
+  onAddToCart,
+  onEdit,
+  onDelete,
+  busy = false,
+}: ProductCardProps) {
   const isOutOfStock = product.stock === 0;
   const isCompact = density === 'compact';
 
@@ -34,7 +41,6 @@ export function ProductCard({ product, density = 'comfortable', saved = false, o
           style={{ height: isCompact ? 110 : 160 }}
         />
       </Link>
-
       <Button
         variant="light"
         size="sm"
@@ -45,19 +51,19 @@ export function ProductCard({ product, density = 'comfortable', saved = false, o
       >
         {saved ? <HeartFill className="text-danger" /> : <Heart />}
       </Button>
-
       <Card.Body className={`d-flex flex-column gap-2 ${isCompact ? 'p-2' : ''}`}>
         {!isCompact && <div className="text-muted small text-uppercase">{product.brand ?? product.category}</div>}
         <Card.Title className={`mb-0 ${isCompact ? 'small text-truncate' : 'fs-6'}`}>
-          {/* A real link: middle-click opens a tab, hover shows the URL, screen readers announce it */}
           <Link to={`/products/${product.id}`} className="text-decoration-none text-reset fw-semibold">
             {product.title}
           </Link>
         </Card.Title>
-        {!isCompact && <span className="small text-muted">★ {product.rating.toFixed(1)}</span>}
-
+        {!isCompact && (
+          <span className="small text-muted">
+            ★ {typeof product.rating === 'number' ? product.rating.toFixed(1) : '—'}
+          </span>
+        )}
         <PriceTag price={product.price} discountPercentage={product.discountPercentage} size={isCompact ? 'sm' : 'md'} />
-
         {!isCompact && (
           <div className="mt-auto d-flex justify-content-between align-items-center gap-2 pt-2">
             <StockBadge stock={product.stock} />

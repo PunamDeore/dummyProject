@@ -1,6 +1,3 @@
-/**
- * Shaped EXACTLY like a DummyJSON product — https://dummyjson.com/products/1.
- */
 export interface Product {
   id: number;
   title: string;
@@ -14,26 +11,19 @@ export interface Product {
   thumbnail: string;
   availabilityStatus?: string;
   tags?: string[];
-  /** Detail-only fields (GET /products/:id). */
   sku?: string;
   warrantyInformation?: string;
   shippingInformation?: string;
   returnPolicy?: string;
   images?: string[];
 }
-
-/** What a form produces: the editable subset of a Product. The id, rating etc. are the server's business. */
 export type ProductDraft = Pick<Product, 'title' | 'price' | 'category' | 'stock' | 'description'>;
-
-/** The envelope every DummyJSON list endpoint returns. */
 export interface ProductListResponse {
   products: Product[];
   total: number;
   skip: number;
   limit: number;
 }
-
-/** GET /products/categories */
 export interface ApiCategory {
   slug: string;
   name: string;
@@ -47,13 +37,7 @@ export interface CategoryOption {
   name: string;
   count?: number;
 }
-
-// ------------------------------------------------------------------ auth
-
-/** DummyJSON's three roles. A union, so `user.role === 'admn'` is a compile error. */
 export type Role = 'admin' | 'moderator' | 'user';
-
-/** The FULL profile from GET /auth/me. The login response is a SUBSET of this — it has no `role`. */
 export interface User {
   id: number;
   username: string;
@@ -68,18 +52,10 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
-
-/** POST /auth/login — tokens plus a few profile fields. Note what's missing: `role`. */
 export type LoginResponse = AuthTokens & Pick<User, 'id' | 'username' | 'email' | 'firstName' | 'lastName' | 'image'>;
-
-/** GET /users — the directory page. */
 export interface DirectoryUser extends User {
   company?: { title?: string };
 }
-
-// ------------------------------------------------------------------ client state
-
-/** One line in the shopping cart — a SNAPSHOT of the product, so the cart survives catalogue changes. */
 export interface CartLine {
   productId: number;
   title: string;
@@ -88,13 +64,10 @@ export interface CartLine {
   qty: number;
 }
 
-/** One item in a POST /carts/add body. */
 export interface CartItemInput {
   id: number;
   quantity: number;
 }
-
-/** GET /carts/user/:id, and what POST /carts/add returns */
 export interface Cart {
   id: number;
   userId: number;
@@ -102,4 +75,34 @@ export interface Cart {
   totalQuantity: number;
   total: number;
   discountedTotal: number;
+}
+
+export type OrderStatus = 'PLACED' | 'FAILED';
+
+export interface OrderItem {
+  id: number;
+  productId: number;
+  title: string;
+  price: number;
+  quantity: number;
+  total: number;
+  discountPercentage: number;
+  discountedTotal: number;
+  thumbnail: string;
+}
+
+export interface Order {
+  id: number;
+  userId: number;
+  total: number;
+  discountedTotal: number;
+  totalProducts: number;
+  totalQuantity: number;
+  status: OrderStatus;
+  paymentMethod: string;
+  lastFourDigits: string;
+  failureReason?: string | null;
+  orderPlacedDate: string;
+  arrivingDate?: string | null;
+  items: OrderItem[];
 }

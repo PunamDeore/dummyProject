@@ -1,14 +1,10 @@
-/** "price-asc" | "price-desc" | "rating-desc" | "" — the sort select's values, also what the URL will carry. */
 export type SortKey = '' | 'price-asc' | 'price-desc' | 'rating-desc';
 
-/** Split a SortKey into what the API wants. '' → no sort. */
 export function parseSort(sort: SortKey): { sortBy: 'price' | 'rating' | ''; order: 'asc' | 'desc' } {
   if (!sort) return { sortBy: '', order: 'asc' };
   const [sortBy, order] = sort.split('-') as ['price' | 'rating', 'asc' | 'desc'];
   return { sortBy, order };
 }
-
-/** A neutral thumbnail for products created locally, so the card never shows a broken image. */
 export const PLACEHOLDER_THUMBNAIL =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(

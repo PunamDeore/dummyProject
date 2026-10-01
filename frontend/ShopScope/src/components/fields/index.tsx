@@ -7,37 +7,21 @@ export type { BaseFieldProps, FieldShellProps } from './FieldShell';
 export { TextField } from './TextField';
 export { Field } from './Field';
 
-/**
- * A component for every input type — ONE contract:
- *   value in · onChange(value) out · error displayed, not decided · no state.
- *
- * Each input type's awkward read is solved ONCE, in here:
- *   number → valueAsNumber (never the string "42")
- *   checkbox → e.target.checked (not .value)
- *   multi-select → selectedOptions
- *   file → files[0] (and it can never be controlled)
- */
-
-/** An <option>. Generic, so a radio group over a union keeps that union at the call site. */
 export interface Option<T extends string = string> {
   value: T;
   label: string;
   disabled?: boolean;
 }
 
-/** Attributes that pass straight through to the DOM control when a field is used UNCONTROLLED (name, defaultValue…). */
 type ControlRest = Pick<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'defaultValue' | 'autoFocus' | 'required' | 'readOnly'>;
 
-// ------------------------------------------------------------------ number
 export interface NumberFieldProps extends BaseFieldProps, ControlRest {
   value?: number;
-  /** Always a number — never the string the DOM hands you. */
   onChange?: (value: number) => void;
   onBlur?: () => void;
   min?: number;
   max?: number;
   step?: number;
-  /** What an empty box means. Default NaN, which renders as an empty box again. */
   emptyValue?: number;
   prefix?: string;
   suffix?: string;
@@ -59,7 +43,7 @@ export function NumberField({
       onChange={
         onChange
           ? (e) => {
-              const n = (e.target as HTMLInputElement).valueAsNumber; // NaN when the box is empty — decide once, here
+              const n = (e.target as HTMLInputElement).valueAsNumber;
               onChange(Number.isNaN(n) ? emptyValue : n);
             }
           : undefined
@@ -68,7 +52,6 @@ export function NumberField({
       {...rest}
     />
   );
-
   return (
     <FieldShell controlId={controlId} label={label} error={error} hint={hint}>
       {prefix || suffix ? (
@@ -85,7 +68,6 @@ export function NumberField({
   );
 }
 
-// ---------------------------------------------------------------- textarea
 export interface TextAreaFieldProps extends BaseFieldProps, ControlRest {
   value?: string;
   onChange?: (value: string) => void;
@@ -101,7 +83,6 @@ export function TextAreaField({
 }: TextAreaFieldProps) {
   const length = value?.length ?? 0;
   const counter = maxLength && value !== undefined ? `${length}/${maxLength}` : undefined;
-
   return (
     <FieldShell
       controlId={controlId}
@@ -129,13 +110,11 @@ export function TextAreaField({
   );
 }
 
-// ------------------------------------------------------------------ select
 export interface SelectFieldProps extends BaseFieldProps, ControlRest {
   value?: string;
   onChange?: (value: string) => void;
   onBlur?: () => void;
   options: readonly Option[];
-  /** Rendered as an <option value="">, so "nothing chosen" is the empty string. */
   placeholder?: string;
 }
 
@@ -163,7 +142,6 @@ export function SelectField({
   );
 }
 
-// ------------------------------------------------------------ multi-select
 export interface MultiSelectFieldProps extends BaseFieldProps {
   value: readonly string[];
   onChange: (value: string[]) => void;
@@ -180,7 +158,6 @@ export function MultiSelectField({ controlId, label, value, onChange, options, e
         value={value as string[]}
         disabled={disabled}
         isInvalid={Boolean(error)}
-        // selectedOptions, not value — the one genuinely different read
         onChange={(e) => onChange(Array.from(e.target.selectedOptions, (o) => o.value))}
       >
         {options.map((o) => (
@@ -193,11 +170,9 @@ export function MultiSelectField({ controlId, label, value, onChange, options, e
   );
 }
 
-// ------------------------------------------------------- checkbox / switch
 export interface CheckboxFieldProps extends Omit<BaseFieldProps, 'label'> {
   label: ReactNode;
   checked: boolean;
-  /** `checked`, not `value` — the single most-forgotten property. */
   onChange: (checked: boolean) => void;
   onBlur?: () => void;
   type?: 'checkbox' | 'switch';
@@ -223,10 +198,8 @@ export function CheckboxField({ controlId, label, checked, onChange, onBlur, err
   );
 }
 
-// ------------------------------------------------------------- radio group
 export interface RadioGroupFieldProps<T extends string> extends BaseFieldProps {
   value: T;
-  /** Generic, so the parent keeps its narrow union — no cast at the call site. */
   onChange: (value: T) => void;
   options: readonly Option<T>[];
   inline?: boolean;
@@ -234,23 +207,22 @@ export interface RadioGroupFieldProps<T extends string> extends BaseFieldProps {
 
 export function RadioGroupField<T extends string>({ controlId, label, value, onChange, options, error, hint, inline = true, disabled }: RadioGroupFieldProps<T>) {
   return (
-    <Form.Group className="mb-3">
+    <Form.Group className="mb-3" controlId={controlId}>
       <Form.Label className="small fw-semibold d-block">{label}</Form.Label>
       <div className={inline ? 'd-flex flex-wrap gap-3' : ''}>
         {options.map((o, i) => (
           <Form.Check
             key={o.value}
             type="radio"
-            id={`${controlId}.${o.value}`}
-            name={controlId} // one shared name is what makes them mutually exclusive
-            label={<span className="small">{o.label}</span>}
+            id={`${controlId}-${o.value}`}
+            name={controlId}
+            label={o.label}
             value={o.value}
             checked={value === o.value}
             disabled={disabled || o.disabled}
             isInvalid={Boolean(error) && i === options.length - 1}
             feedback={i === options.length - 1 ? error : undefined}
             feedbackType="invalid"
-            // The cast lives HERE, once, instead of at every call site
             onChange={(e) => onChange(e.target.value as T)}
           />
         ))}
@@ -260,9 +232,7 @@ export function RadioGroupField<T extends string>({ controlId, label, value, onC
   );
 }
 
-// ---------------------------------------------------------- checkbox group
 export interface CheckboxGroupFieldProps extends BaseFieldProps {
-  /** An ARRAY — a checkbox group is not one value. */
   value: readonly string[];
   onChange: (value: string[]) => void;
   options: readonly Option[];
@@ -271,7 +241,7 @@ export interface CheckboxGroupFieldProps extends BaseFieldProps {
 
 export function CheckboxGroupField({ controlId, label, value, onChange, options, error, hint, inline = true, disabled }: CheckboxGroupFieldProps) {
   function toggle(option: string, checked: boolean) {
-    onChange(checked ? [...value, option] : value.filter((v) => v !== option)); // updated immutably
+    onChange(checked ? [...value, option] : value.filter((v) => v !== option));
   }
   return (
     <Form.Group className="mb-3">
@@ -281,8 +251,8 @@ export function CheckboxGroupField({ controlId, label, value, onChange, options,
           <Form.Check
             key={o.value}
             type="checkbox"
-            id={`${controlId}.${o.value}`}
-            label={<span className="small">{o.label}</span>}
+            id={`${controlId}-${o.value}`}
+            label={o.label}
             checked={value.includes(o.value)}
             disabled={disabled || o.disabled}
             onChange={(e) => toggle(o.value, e.target.checked)}
@@ -294,9 +264,7 @@ export function CheckboxGroupField({ controlId, label, value, onChange, options,
   );
 }
 
-// -------------------------------------------------------------- date / time
 export interface DateFieldProps extends BaseFieldProps {
-  /** ISO "YYYY-MM-DD" (or "HH:mm" for time) — a string, deliberately. Parse to a Date at the edge, not in state. */
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -322,7 +290,6 @@ export function DateField({ controlId, label, value, onChange, onBlur, error, hi
   );
 }
 
-// ------------------------------------------------------------------- range
 export interface RangeFieldProps extends BaseFieldProps {
   value: number;
   onChange: (value: number) => void;
@@ -345,9 +312,7 @@ export function RangeField({ controlId, label, value, onChange, error, hint, min
   );
 }
 
-// -------------------------------------------------------------------- file
 export interface FileFieldProps extends BaseFieldProps {
-  /** Files can't be set from code, so we hold the File object, not a value. */
   file: File | null;
   onChange: (file: File | null) => void;
   accept?: string;
@@ -359,14 +324,13 @@ export function FileField({ controlId, label, file, onChange, error, hint, accep
       controlId={controlId}
       label={label}
       error={error}
-      hint={hint ?? (file ? `${file.name} · ${Math.round(file.size / 1024)} KB` : undefined)}
+      hint={hint ?? (file ? `${file.name} — ${Math.round(file.size / 1024)} KB` : undefined)}
     >
       <Form.Control
         type="file"
         accept={accept}
         disabled={disabled}
         isInvalid={Boolean(error)}
-        // Always uncontrolled: a file input's value can't be set from code, for security reasons
         onChange={(e) => onChange((e.target as HTMLInputElement).files?.[0] ?? null)}
       />
     </FieldShell>

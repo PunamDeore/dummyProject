@@ -1,14 +1,3 @@
-/**
- * The single source of truth for environment configuration.
- *
- * Read `import.meta.env` NOWHERE else. This module validates on import, so a
- * misconfigured deploy fails at startup with a clear message instead of at
- * 2am with `baseURL: undefined`.
- *
- * The keys are typed in vite-env.d.ts — a typo in a name is a compile error
- * here, not a silent `undefined` in production.
- */
-
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 const LOG_LEVELS: readonly LogLevel[] = ['debug', 'info', 'warn', 'error'];
 
@@ -34,8 +23,6 @@ function asNumber(name: EnvKey, fallback: number): number {
   if (Number.isNaN(parsed)) throw new Error(`[config] ${name} must be a number, got "${raw}".`);
   return parsed;
 }
-
-/** Env vars are ALWAYS strings. The string "false" is truthy. This is the classic bug. */
 function asBoolean(name: EnvKey, fallback: boolean): boolean {
   const raw = import.meta.env[name];
   if (raw === undefined || raw === '') return fallback;
@@ -52,17 +39,17 @@ function asLogLevel(name: EnvKey, fallback: LogLevel): LogLevel {
 
 export const env = Object.freeze({
   appName: optional('VITE_APP_NAME', 'ShopScope'),
-  mode: import.meta.env.MODE, // 'development' | 'staging' | 'production'
-  isDev: import.meta.env.DEV, // true under `vite dev`, any mode
-  isProd: import.meta.env.PROD, // true under any `vite build`
+  mode: import.meta.env.MODE, 
+  isDev: import.meta.env.DEV, 
+  isProd: import.meta.env.PROD, 
 
   api: Object.freeze({
-    baseUrl: required('VITE_API_BASE_URL').replace(/\/$/, ''), // never a trailing slash
+    baseUrl: required('VITE_API_BASE_URL').replace(/\/$/, ''), 
     timeoutMs: asNumber('VITE_API_TIMEOUT_MS', 10_000),
   }),
 
   upload: Object.freeze({
-    // A separate host: httpbin echoes multipart uploads back, which DummyJSON can't do.
+  
     baseUrl: optional('VITE_UPLOAD_BASE_URL', 'https://httpbin.org').replace(/\/$/, ''),
   }),
 
@@ -74,7 +61,7 @@ export const env = Object.freeze({
   }),
 });
 
-/** The config's shape, for anything that wants to accept it as a parameter. */
+
 export type Env = typeof env;
 
 if (env.isDev) {

@@ -7,11 +7,7 @@ interface CategoryStripProps {
   onSelect: (id: string) => void;
 }
 
-/**
- * A CONTROLLED component: it owns no state. The parent tells it which pill is
- * active (`activeId`) and it reports clicks (`onSelect`).
- * `count` is optional — the API's category list doesn't carry one.
- */
+
 export function CategoryStrip({ categories, activeId, onSelect }: CategoryStripProps) {
   return (
     <Nav

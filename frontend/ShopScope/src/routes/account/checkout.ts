@@ -1,33 +1,51 @@
-import { data, type ActionFunctionArgs } from 'react-router';
+import { data, redirect, type ActionFunctionArgs } from 'react-router';
+import { createOrder } from '../../api/services/orders';
 import { createCart } from '../../api/services/carts';
 import { ApiError } from '../../lib/ApiError';
-import { useCartStore } from '../../store/cart';
+import { store, selectCartLines } from '../../store';
+import { clearCart } from '../../store/cartSlice';
 import { userContext } from '../middleware';
-import type { Cart } from '../../types';
+import type { Order } from '../../types';
 
-/** A discriminated union: `ok` tells the drawer which fields exist. */
-export type CheckoutResult = { ok: true; cart: Cart } | { ok: false; error: string };
+export type CheckoutResult = { ok: true; order: Order } | { ok: false; error: string };
 
-/**
- * An action with NO component — the app's checkout "endpoint". It sits under
- * /account, so authMiddleware runs first: a signed-out fetcher submission is
- * redirected to /login before this line ever executes.
- */
-export async function checkoutAction({ context }: ActionFunctionArgs): Promise<CheckoutResult> {
+export async function checkoutAction({ request, context }: ActionFunctionArgs): Promise<CheckoutResult | Response> {
   const user = context.get(userContext);
-  if (!user) throw data({ message: 'Sign in to check out.' }, { status: 401 }); // a wiring bug — the middleware should have redirected
+  if (!user) throw data({ message: 'Sign in to check out.' }, { status: 401 });
 
-  // The store OUTSIDE React: getState() is a plain function call — no hook, no component, no props.
-  const { lines, clear } = useCartStore.getState();
+  const lines = selectCartLines(store.getState());
   if (lines.length === 0) return { ok: false, error: 'Your cart is empty.' };
 
+  const formData = await request.formData();
+  const cardNumber = String(formData.get('cardNumber') ?? '');
+  const cardExpiry = String(formData.get('cardExpiry') ?? '');
+  const cvv = String(formData.get('cvv') ?? '');
+  const paymentOutcome = formData.get('paymentOutcome');
+  const paymentSuccess = paymentOutcome === 'FAIL' ? false : cvv !== '000';
+
   try {
-    const cart = await createCart(
-      user.id,
-      lines.map((line) => ({ id: line.productId, quantity: line.qty })),
-    );
-    clear(); // a store action, called from a router action — every subscribed component updates
-    return { ok: true, cart };
+    const products = lines.map((line) => ({ id: line.productId, quantity: line.qty }));
+
+    const order = await createOrder({
+      userId: user.id,
+      products,
+      cardNumber,
+      cardExpiry,
+      cvv,
+      paymentMethod: 'CARD',
+      paymentSuccess,
+    });
+
+    if (order.status === 'PLACED') {
+      await createCart(user.id, products, { cardNumber, cardExpiry, cvv });
+      store.dispatch(clearCart());
+      return redirect(`/products?flash=${encodeURIComponent('Order placed, thank you!')}`);
+    } else {
+      return {
+        ok: false,
+        error: 'Payment failed: The transaction was declined. Your attempt has been logged under Orders.',
+      };
+    }
   } catch (error) {
     return { ok: false, error: ApiError.from(error).message };
   }

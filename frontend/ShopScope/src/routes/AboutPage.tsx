@@ -1,6 +1,4 @@
 import { Card } from 'react-bootstrap';
-
-/** A second page, so there is somewhere to navigate TO. Finished — nothing to do here. */
 export function AboutPage() {
   return (
     <Card>

@@ -5,12 +5,11 @@ const KEYS = {
   refresh: 'shopscope.refreshToken',
   user: 'shopscope.user',
 } as const;
-
-/** Fired whenever auth state changes, so the UI can react from anywhere — including from an interceptor. */
 export const AUTH_CHANGED = 'shopscope:auth-changed';
+export const AUTH_UNAUTHORIZED = 'shopscope:unauthorized';
 
-function emit() {
-  window.dispatchEvent(new Event(AUTH_CHANGED));
+function emit(eventName: string) {
+  window.dispatchEvent(new Event(eventName));
 }
 
 export interface TokenStore {
@@ -20,40 +19,34 @@ export interface TokenStore {
   isAuthenticated(): boolean;
   set(values: { accessToken?: string; refreshToken?: string; user?: User }): void;
   clear(): void;
+  emitUnauthorized(): void;
 }
 
-/**
- * localStorage is readable by ANY script on the page — an XSS anywhere in the
- * app or its dependencies can steal these tokens. In production, prefer an
- * httpOnly cookie issued by your own backend. We use localStorage here because
- * DummyJSON is token-based and this is a workshop; the trade-off is stated,
- * not hidden.
- */
 export const tokenStore: TokenStore = {
   getAccess: () => localStorage.getItem(KEYS.access),
   getRefresh: () => localStorage.getItem(KEYS.refresh),
-
   getUser() {
     try {
       return JSON.parse(localStorage.getItem(KEYS.user) ?? 'null') as User | null;
     } catch {
-      return null; // a corrupted entry means "signed out", not "crash"
+      return null;
     }
   },
-
   isAuthenticated() {
     return Boolean(localStorage.getItem(KEYS.access));
   },
-
   set({ accessToken, refreshToken, user }) {
     if (accessToken) localStorage.setItem(KEYS.access, accessToken);
     if (refreshToken) localStorage.setItem(KEYS.refresh, refreshToken);
     if (user) localStorage.setItem(KEYS.user, JSON.stringify(user));
-    emit();
+    emit(AUTH_CHANGED);
   },
-
   clear() {
     Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
-    emit();
+    emit(AUTH_CHANGED);
+  },
+  emitUnauthorized() {
+    Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
+    emit(AUTH_UNAUTHORIZED);
   },
 };

@@ -8,8 +8,6 @@ const ROLE_VARIANT: Record<Role, string> = { admin: 'danger', moderator: 'warnin
 export async function teamLoader({ request }: LoaderFunctionArgs) {
   return { users: await listUsers({ limit: 12, signal: request.signal }) };
 }
-
-/** Admin-only. The guard is on the ROUTE (requireRole in router.tsx), not in here. */
 export function TeamPage() {
   const { users } = useLoaderData<typeof teamLoader>();
 

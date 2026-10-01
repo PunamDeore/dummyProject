@@ -1,39 +1,56 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { AUTH_CHANGED, tokenStore } from '../lib/tokenStore';
 
-/**
- * State AND the actions that change it, in one object. Components never call
- * `set` — they call `toggle`, and the store decides what that means.
- */
 interface WishlistState {
   ids: number[];
   toggle: (id: number) => void;
   clear: () => void;
+  syncUserWishlist: () => void;
 }
+const getUserWishlistKey = () => {
+  const user = tokenStore.getUser();
+  return user ? `shopscope.wishlist.user_${user.id}` : 'shopscope.wishlist.guest';
+};
 
-/**
- * A store is a HOOK. `useWishlistStore((s) => s.ids)` subscribes a component
- * to exactly that slice — it re-renders when `ids` changes and at no other time.
- *
- * `create<State>()(…)` — the empty call is the TypeScript idiom that lets the
- * middleware types flow through; without it, `persist` loses the state type.
- */
 export const useWishlistStore = create<WishlistState>()(
   persist(
     (set) => ({
       ids: [],
-      // `set` with a function reads the CURRENT state, like React's updater form.
       toggle: (id) =>
-        set((state) => ({ ids: state.ids.includes(id) ? state.ids.filter((x) => x !== id) : [...state.ids, id] })),
+        set((state) => ({
+          ids: state.ids.includes(id) ? state.ids.filter((x) => x !== id) : [...state.ids, id],
+        })),
       clear: () => set({ ids: [] }),
+      syncUserWishlist: () => {
+        try {
+          const raw = localStorage.getItem(getUserWishlistKey());
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            set({ ids: parsed.state?.ids ?? [] });
+          } else {
+            set({ ids: [] });
+          }
+        } catch {
+          set({ ids: [] });
+        }
+      },
     }),
-    { name: 'shopscope.wishlist' }, // the localStorage key
+    {
+      name: 'shopscope.wishlist',
+      storage: createJSONStorage(() => ({
+        getItem: () => localStorage.getItem(getUserWishlistKey()),
+        setItem: (_key: string, value: string) => localStorage.setItem(getUserWishlistKey(), value),
+        removeItem: () => localStorage.removeItem(getUserWishlistKey()),
+      })),
+      version: 1,
+    },
   ),
 );
-
-// --- Selectors: named, reusable, testable without React. -------------------
-
+if (typeof window !== 'undefined') {
+  window.addEventListener(AUTH_CHANGED, () => {
+    useWishlistStore.getState().syncUserWishlist();
+  });
+}
 export const selectWishlistCount = (state: WishlistState) => state.ids.length;
-
-/** A selector FACTORY: `useWishlistStore(selectIsSaved(42))` → boolean. */
 export const selectIsSaved = (id: number) => (state: WishlistState) => state.ids.includes(id);
