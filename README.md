@@ -114,15 +114,6 @@ src/
 
 ```
 
----
-
-## 🧪 Default Test Credentials
-
-When testing against the default seeded users:
-
-* **Admin**: `emilys` / `emilyspass`
-* **Customer**: `averyp` / `averyppass`
-
 ```
 
 ```
